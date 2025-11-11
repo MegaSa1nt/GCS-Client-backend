@@ -52,11 +52,11 @@ app.get("/download/:updateType/:lastTimestamp", async ({params: { updateType, la
 	if(updateType == 'launcher') updateType = 'pc-launcher';
 	
 	const updateFileType = await utils.getUpdateFileType(updateType);
-	if(updateFileType.startsWith('file')) return new Response(Bun.file(resolve(`./files/${updateType}.file`)));
+	if(updateFileType.startsWith('file')) return new Response(Bun.file(resolve(`./files/${updateType}.file`)), { status: 206 });
 
-	if(lastTimestamp == 0) return new Response(Bun.file(resolve(`./files/${updateType}/archive.zip`)));
+	if(lastTimestamp == 0) return new Response(Bun.file(resolve(`./files/${updateType}/archive.zip`)), { status: 206 });
 
-	return new Response(Bun.file(resolve(`./patches/${updateType}/${lastTimestamp}/patches.zip`)));
+	return new Response(Bun.file(resolve(`./patches/${updateType}/${lastTimestamp}/patches.zip`)), { status: 206 });
 });
 
 app.route('OPTIONS', '/download/:updateType/:lastTimestamp', async ({params: { updateType, lastTimestamp }}) => {
@@ -116,7 +116,7 @@ if(await convert_oldPCVersionFile.exists()) {
 	const convert_oldPCVersionFileNew = Bun.file(resolve(`./pc-launcher-version`));
 	if(await convert_oldPCVersionFileNew.exists()) await rm(resolve(`./pc-launcher-version`), { recursive: true, force: true });
 	
-	await rename(resolve(`./files/last`), resolve(`./files/pc`));
+	await rename(resolve(`./files/last`), resolve(`./files/pc`)).catch(e => console.error(e));
 	rename(resolve(`./files/files.json`), resolve(`./files/pc/files.json`));
 	rename(resolve(`./files/latest.7z`), resolve(`./files/pc/archive.zip`));
 	const convert_newUpdatesPC = await utils.getPatchUpdates(0, 'pc');
@@ -124,14 +124,14 @@ if(await convert_oldPCVersionFile.exists()) {
 	utils.log(`PC patches: ${convert_newUpdatesPC.length}`);
 	
 	for(const timestamp of convert_newUpdatesPC) {
-		await mkdir(resolve(`./patches/pc`), {recursive: true});
+		await mkdir(resolve(`./patches/pc`), {recursive: true}).catch(e => console.error(e));
 		
-		await rename(resolve(`./patches/${timestamp.timestamp}`), resolve(`./patches/pc/${timestamp.timestamp}`));
+		await rename(resolve(`./patches/${timestamp.timestamp}`), resolve(`./patches/pc/${timestamp.timestamp}`)).catch(e => console.error(e));
 		rename(resolve(`./patches/pc/${timestamp.timestamp}/patches.7z`), resolve(`./patches/pc/${timestamp.timestamp}/patches.zip`));
 	}
 	
-	await rename(resolve(`./launcher_version`), resolve(`./pc-launcher-version`));
-	await rename(resolve(`./files/launcher`), resolve(`./files/pc-launcher`));
+	await rename(resolve(`./launcher_version`), resolve(`./pc-launcher-version`)).catch(e => console.error(e));
+	await rename(resolve(`./files/launcher`), resolve(`./files/pc-launcher`)).catch(e => console.error(e));
 	rename(resolve(`./files/launcher.json`), resolve(`./files/pc-launcher/files.json`));
 	rename(resolve(`./files/launcher.7z`), resolve(`./files/pc-launcher/archive.zip`));
 	const convert_newUpdatesLauncher = await utils.getPatchUpdates(0, 'pc-launcher');
@@ -141,7 +141,7 @@ if(await convert_oldPCVersionFile.exists()) {
 	for(const timestamp of convert_newUpdatesLauncher) {
 		await mkdir(resolve(`./patches/pc-launcher`), {recursive: true});
 		
-		await rename(resolve(`./patches/${timestamp.timestamp}`), resolve(`./patches/pc-launcher/${timestamp.timestamp}`));
+		await rename(resolve(`./patches/${timestamp.timestamp}`), resolve(`./patches/pc-launcher/${timestamp.timestamp}`)).catch(e => console.error(e));
 		rename(resolve(`./patches/pc-launcher/${timestamp.timestamp}/patches.7z`), resolve(`./patches/pc-launcher/${timestamp.timestamp}/patches.zip`));
 	}
 	
